@@ -20,8 +20,6 @@ const multipleAreaChartData = [
 ];
 
 
-
-
 const stackedBarChartData = [
   { name: 'Jan', series1: 30, series2: 20, series3: 10 }, // Total: 60
   { name: 'Feb', series1: 50, series2: 30, series3: 20 }, // Total: 100
@@ -152,7 +150,7 @@ const Dashboard = () => {
                   </Card>
               </Col>
 
-                  {/* Line Chart */}
+                {/* Line Chart */}
                 <Col span={6}>
                   <Row gutter={6}>
                   <Card style={{ height: '120px',width:'350px',padding: '20px' }}>
@@ -173,7 +171,7 @@ const Dashboard = () => {
                     </Card>
                   </Row>
                   </Col>
-            </Row>
+             </Row>
 
 
 
@@ -229,8 +227,13 @@ const Dashboard = () => {
               {/*stackedBarChartData*/}
               <Col span={6}>
                 <Card >
-               
-
+                        <BarChart width={250} height={200} data={Groupbarchart} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                          <XAxis dataKey="quarter" axisLine={{ strokeWidth: 0 }} tickLine={false} />
+                          <Tooltip />
+                          <Bar dataKey="ProductA" fill="#57d683" barSize={10}/>
+                          <Bar dataKey="ProductB" fill="#2cc5d6" barSize={10}/>
+                          <Bar dataKey="ProductC" fill="#5393fb" barSize={10}/>
+                        </BarChart>
                 </Card>
              </Col>
           </Row>
@@ -241,7 +244,7 @@ const Dashboard = () => {
             <Col span={24}>
               <Card>
                 <Row>
-                <BarChart width={900} height={200} data={stackedBarChartData}>
+                <BarChart width={1000} height={200} data={stackedBarChartData}>
                 <CartesianGrid 
                     horizontal={true} 
                     vertical={false} 
@@ -267,18 +270,19 @@ const Dashboard = () => {
                   <Bar dataKey="series1" stackId="a" fill="#57d683" barSize={20} />  {/* Adjust barSize here */}
                   <Bar dataKey="series2" stackId="a" fill="#2cc5d6" barSize={20} />  {/* Adjust barSize here */}
                   <Bar dataKey="series3" stackId="a" fill="#5393fb" barSize={20} />  {/* Adjust barSize here */}
-                </BarChart>
-                </Row>
+                  </BarChart>
+                
 
-                <Col span={6} style={{ marginLeft: '20px' }}>
-                        <BarChart width={250} height={250} data={Groupbarchart} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                
+                        <BarChart width={300} height={200} data={Groupbarchart} margin={{ top: 20, right: 30, left: 80, bottom: 5 }}>
                           <XAxis dataKey="quarter" axisLine={{ strokeWidth: 0 }} tickLine={false} />
                           <Tooltip />
                           <Bar dataKey="ProductA" fill="#57d683" barSize={10}/>
                           <Bar dataKey="ProductB" fill="#2cc5d6" barSize={10}/>
                           <Bar dataKey="ProductC" fill="#5393fb" barSize={10}/>
                         </BarChart>
-                      </Col>
+
+                  </Row>
               </Card>
             </Col>
           </Row>

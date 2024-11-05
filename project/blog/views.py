@@ -4,8 +4,6 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import viewsets, status
-from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from .models import UserProfile
@@ -18,6 +16,12 @@ from rest_framework.permissions import AllowAny
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import permission_classes
 from django.shortcuts import get_object_or_404
+from .models import CreateQuiz
+from .models import Question,CreateTest,TestParticipant, UserResponse
+from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response  # Assuming you have a Question model
+from .serializers import QuestionSerializer  # Assuming you have a serializer for Question
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -44,11 +48,6 @@ def login(request):
         return Response({'refresh': str(refresh), 'access': str(refresh.access_token)}, status=status.HTTP_200_OK)
     return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
-# @api_view(['GET'])
-# def dashboard(request):
-#     if request.user.is_authenticated:
-#         return Response({'message': f'Welcome {request.user.username}'}, status=status.HTTP_200_OK)
-#     return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['GET'])
 def dashboard(request):
@@ -122,3 +121,231 @@ class UserProfileViewSet(viewsets.ViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response({'detail': 'No image provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def submit_questions(request):
+    try:
+        print(request.data)
+        questions_data = request.data['questions']
+        test_title = request.data['testTitle']
+        test_introduction = request.data['testIntroduction']
+
+        # Create a quiz entry first
+        
+        CreateQuiz.objects.filter(creator_ID=request.user).delete()
+
+            
+        # Loop through the questions and save the details based on their type
+        for question_data in questions_data:
+            quiz = CreateQuiz.objects.create(
+            creator_ID=request.user,
+            test_title=test_title,
+            Introduction=test_introduction,
+            )
+            # Determine the question type
+            question_type = question_data.get('type', 'multiplechoice')
+            quiz.question= question_data['text'] 
+            quiz.question_type= question_data['type']
+            # If it's a fill-in-the-blank or true/false, just save the correct answer
+            if question_type == 'fillintheblank' or question_type == 'truefalse':
+                # Save the correct answer directly (assuming it's a string)
+                quiz.is_correct.append(question_data['correctAnswer'])  # Save correct answer directly
+
+            # If it's a multiple-choice question, save options
+            elif question_type == 'multiplechoice' or question_type == 'multipleresponse':
+                options = question_data.get('options', [])
+                quiz.options.append(options)  # Save options directly
+                if question_type == 'multipleresponse':
+                    correct_answers = question_data.get('correctAnswers', [])  # List of correct answers
+                    for answer in correct_answers:
+                        quiz.is_correct.append(options[answer])
+                else:
+                    # For regular multiple choice (single correct answer)
+                    quiz.is_correct.append(options[question_data['correctAnswer']])
+                            
+
+        # Save the quiz object after appending options and answers
+            print(quiz)
+            quiz.save()
+
+        return Response({"message": "Questions submitted successfully"}, status=201)
+
+    except Exception as e:
+        print(f"Error submitting questions: {e}")
+        return Response({"error": str(e)}, status=400)
+
+
+
+@api_view(['POST'])
+def submit_questions2(request):
+    try:
+        # Retrieve data from the request
+        test_title = request.data.get('testTitle')
+        test_introduction = request.data.get('testIntroduction')
+        questions_data = request.data.get('questions', [])
+
+        def validate_questions(questions_data):
+          
+            is_valid = True
+            for question_data in questions_data:
+                print(question_data)
+                question_text = question_data.get('text')
+                question_type = question_data.get('type')
+                options = question_data.get('options', [])
+                correct_answer = question_data.get('correctAnswer')
+                # Check that question_text exists
+                if not question_text:
+                    is_valid = False
+                    print(2)
+                    break
+                
+                # Validate based on question type
+                if question_type in ['multiplechoice']:
+                    print(correct_answer)
+                    # Multiple choice questions must have options and a correct answer in options
+                    if not options or len(options) < 2 or correct_answer is None:
+                        is_valid = False
+                        break
+                elif question_type in ['fillintheblank', 'truefalse']:
+                    # Fill-in-the-blank and True/False questions should not have options
+                    
+                    if correct_answer is None:
+                        print(4)
+                        is_valid = False
+                        break
+
+            return is_valid
+        
+            
+        if validate_questions(questions_data):
+            quiz = CreateTest.objects.create(
+                creator=request.user,
+                test_title=test_title,
+                introduction=test_introduction,
+            )
+        else:
+            raise ValidationError("Some questions are missing required fields or have invalid configurations.")
+
+
+        # Loop through each question in the submitted data
+        for question_data in questions_data:
+            question_text = question_data.get('text')
+            question_type = question_data.get('type')
+            options = question_data.get('options', [])
+            correct_answer = question_data.get('correctAnswer')
+            # Validate question data
+            if not question_text or not question_type:
+                return Response({"error": "Each question must have text and type."}, status=400)
+            # Create the question instance
+            question = Question.objects.create(
+                quiz=quiz,
+                question=question_text,
+                question_type=question_type,
+                correct_answer=correct_answer if question_type in ['fillintheblank', 'truefalse'] else 'null',
+            )
+            
+            # If it's a multiple-choice question, save options
+  
+            if question_type in ['multiplechoice', 'multipleresponse']:
+                # Update the question instance with options
+                question.options = options  # Assign the options directly to the question
+                question.save()  # Save the question instance
+
+                if question_type == 'multipleresponse':
+                    correct_answers = question_data.get('correctAnswers', [])  # List of correct answers
+                    question.correct_answer = [options[answer] for answer in correct_answers]
+                else:
+                    # For regular multiple choice (single correct answer)
+                    question.correct_answer = options[question_data['correctAnswer']]
+
+            # Ensure to save the question after setting options and correct answer
+            question.save()
+
+        return Response({
+            "message": "Quiz and questions submitted successfully",
+            "test_id": quiz.Test_ID  # Ensure this line is returning the test ID
+        }, status=201)
+
+    except Exception as e:
+        print(f"Error submitting quiz: {e}")
+        return Response({"error": str(e)}, status=400)
+
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])  # Allow access to everyone
+def get_question(request, testID):
+    try:
+        # Fetch questions related to the given testID
+        print(testID)
+        questions = Question.objects.filter(quiz__Test_ID=testID)  # Adjusted to use the correct relationship
+        serializer = QuestionSerializer(questions, many=True)  # Serialize the data
+        print('mydata:',serializer.data)
+        return Response(serializer.data)
+    except Question.DoesNotExist:
+        return Response({'error': 'No questions found for this test.'}, status=404)
+
+
+# @api_view(['POST'])
+# @permission_classes([AllowAny])  # Allow access to everyone
+# def submit-answer(request, testID):
+#     try:
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def push_question(request):
+    try:
+        data = request.data  
+        print('haiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii:',data)
+        # Extract relevant fields from the response data
+        participant_name = data.get('name')
+        question_id = data.get('question_id')
+        answer_given = data.get('answer_given')
+        is_correct = data.get('is_correct')
+        
+        # Check that all fields are present
+        if not all([participant_name, question_id, answer_given is not None, is_correct is not None]):
+            return Response({"error": "Missing fields in the request data"}, status=400)
+
+        # Retrieve or create the participant and related test
+        test = CreateTest.objects.first()  # Adjust this to select the specific test
+        participant, created = TestParticipant.objects.get_or_create(
+            test=test,
+            participant_name=participant_name
+        )
+
+        # Get the question by ID
+        try:
+            print('__________________________________________________________________________')
+            question = Question.objects.get(question_ID=question_id)
+        except Question.DoesNotExist:
+            return Response({"error": "Question not found"}, status=404)
+
+        # Save the user's response
+        user_response = UserResponse.objects.create(
+            participant=participant,
+            question=question,
+            answer_given=answer_given,
+            is_correct=is_correct
+        )
+
+        # Return a success response
+        return Response({"success": "Response saved successfully", "response_id": user_response.id}, status=201)
+    
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def fetch_UserTests(request):
+    user = request.user
+    # Retrieve tests created by the user
+    user_tests = CreateTest.objects.filter(creator=user).values('Test_ID', 'test_title', 'created_at')  # Filter tests created by the user
+    
+    # Convert the QuerySet to a list of dictionaries
+    test_list = list(user_tests)
+    
+    return Response(test_list)  # Return the list as a JSON response

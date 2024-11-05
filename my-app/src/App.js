@@ -7,12 +7,16 @@ import Dashboard from './component/Dashboard';
 import Dbsettings from './component/Dbsettings';
 import Sidebar from './component/Sidebar';
 import Profile from './component/Profile';
+import Test from './component/test';
+import Createtest from './component/CreateTest';
+import Publish from './component/publish'; 
+import Testlist from './component/testlist';
+import Edittest from './component/EditTest';
 
 function App() {
   const location = useLocation(); // Get the current route
-
   // Check if the current route is either /login or /register
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname.startsWith("/test/");
 
   return (
     <div>
@@ -36,6 +40,11 @@ function Content() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/dbsettings" element={<Dbsettings />} />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/test/:id" element={<Test />} />
+      <Route path="/test" element={<Testlist />} />
+      <Route path="/createtest" element={<Createtest />} />
+      <Route path="/publish" element={<Publish />} />
+      <Route path="/edittest" element={<Edittest />} />
     </Routes>
   );
 }

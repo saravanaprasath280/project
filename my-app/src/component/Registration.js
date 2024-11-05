@@ -1,145 +1,152 @@
-//import axios from 'axios';
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser } from '../services/apiServices';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser, faEnvelope, faLock } from '@fortawesome/free-solid-svg-icons';
 
 const Registration = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate()
+  const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    // Handle registration logic (e.g., create user)
     try {
-      // Sending a POST request to the Django backend to create a user
-      const response = await registerUser({username, password, email });
-     
-      //localStorage.setItem('access_token', response.data.access);
-      alert('Registration submitted');
-      navigate('/login');  // Redirect to login page after successful registration
+      const response = await registerUser({ username, password, email });
+      if (response.status === 201) {
+        navigate('/login');
+      } else {
+        setErrorMessage(response.data.error);
+      }
     } catch (error) {
-      console.error('Error during registration:', error);
-      alert('Registration failed');
+      console.error('Registration error:', error);
+      setErrorMessage('An error occurred during registration. Please try again.');
     }
   };
 
   return (
-    <div className="registration-container">
-      <h2>Register</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="username">Username:</label>
-          <input
-            type="text"
-            id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="email">Email:</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">Register</button>
-      </form>
-      <div className="login-link">
-        <p>
-          Already have an account? <Link to="/login">Login here</Link>
-        </p>
+    <div className="container">
+      <div className="form-container">
+        <h2 className="form-title">
+          <span className="highlight">Re</span>gister
+        </h2>
+        {errorMessage && <p className="error-message">{errorMessage}</p>}
+        <form onSubmit={handleSubmit}>
+          <div className="input-group">
+            <FontAwesomeIcon icon={faUser} className="icon" />
+            <input
+              type="text"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className="input-group">
+            <FontAwesomeIcon icon={faEnvelope} className="icon" />
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="input-group">
+            <FontAwesomeIcon icon={faLock} className="icon" />
+            <input
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="submit-button">Register Now</button>
+          <p className="login-text">
+            Already have an account? <Link to="/login">Login here</Link>
+          </p>
+        </form>
       </div>
 
       <style jsx>{`
-        body {
-          font-family: Arial, sans-serif;
-          background-color: #f4f4f4;
+        .container {
           display: flex;
           justify-content: center;
           align-items: center;
           height: 100vh;
-          margin: 0;
+          background-color: #f0f2f5;
         }
-
-        .registration-container {
-          background: #ffffff;
-          padding: 20px;
+        .form-container {
+          width: 350px;
+          padding: 30px;
           border-radius: 8px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-          max-width: 400px;
-          width: 100%;
+          background-color: #ffffff;
+          box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
         }
-
-        h2 {
-          margin-bottom: 20px;
+        .form-title {
           font-size: 24px;
+          font-weight: bold;
+          margin-bottom: 20px;
+        }
+        .highlight {
+          border-bottom: 2px solid #007bff;
+          padding-bottom: 2px;
+        }
+        .error-message {
+          color: red;
+          font-size: 14px;
+          margin-bottom: 15px;
           text-align: center;
         }
-
-        form {
-          display: flex;
-          flex-direction: column;
+        .input-group {
+          position: relative;
+          margin-bottom: 20px;
         }
-
-        .form-group {
-          margin-bottom: 15px;
+        .icon {
+          position: absolute;
+          left: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #888;
         }
-
-        .form-group label {
-          display: block;
-          font-weight: bold;
-          margin-bottom: 5px;
-        }
-
-        .form-group input {
+        input {
           width: 100%;
-          padding: 8px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-        }
-
-        button {
-          background-color: #232830;
+          padding: 10px 10px 10px 35px;
           border: none;
-          color: #fff;
+          border-bottom: 1px solid #ddd;
+          border-radius: 0;
+          font-size: 16px; /* Increased font size */
+          outline: none;
+        }
+        input:focus {
+          border-bottom: 1px solid #007bff;
+        }
+        .submit-button {
+          width: 100%;
           padding: 10px;
+          font-size: 16px;
+          color: #fff;
+          background-color: #007bff;
+          border: none;
           border-radius: 5px;
           cursor: pointer;
-          font-size: 16px;
         }
-
-        button:hover {
-          background-color: #000000;
+        .submit-button:hover {
+          background-color: #0056b3;
         }
-
-        .login-link {
+        .login-text {
           text-align: center;
-          margin-top: 15px;
+          font-size: 16px;
+          margin-top: 20px;
         }
-
-        .login-link a {
+        .login-text a {
           color: #007bff;
           text-decoration: none;
         }
-
-        .login-link a:hover {
+        .login-text a:hover {
           text-decoration: underline;
         }
       `}</style>

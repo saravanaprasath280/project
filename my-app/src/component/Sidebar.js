@@ -3,7 +3,7 @@ import { getDashboardData } from '../services/apiServices';
 import { useLocation, Link, useNavigate } from 'react-router-dom'; // Import useNavigate
 import defaultProfileImage from './profile-image-url.jpg'; // Adjust the path as needed
 import "antd/dist/reset.css";
-import { DashboardOutlined, UserOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons';
+import { DashboardOutlined, UserOutlined, SettingOutlined, LogoutOutlined, FormOutlined, CloudUploadOutlined } from '@ant-design/icons';
 
 const Sidebar = () => {
   const [message, setMessage] = useState('');
@@ -32,11 +32,15 @@ const Sidebar = () => {
   // Logout handler
   const handleLogout = () => {
     localStorage.removeItem('access_token'); // Remove token from local storage
+    localStorage.removeItem('testId');
     // navigate('/login'); // Redirect to login page
   };
 
   const sidebarItems = [
     { label: ' Dashboard', icon: <DashboardOutlined />, path: '/dashboard' },
+    { label: ' Quiz', icon: <FormOutlined /> ,path: '/createtest' },
+    { label: ' Test', icon: <FormOutlined /> ,path: '/test' },
+    { label: ' Publish', icon: <CloudUploadOutlined />, path: '/publish' }, //
     { label: ' Profile', icon: <UserOutlined />, path: '/profile' },
     { label: ' Settings', icon: <SettingOutlined />, path: '/dbsettings' },
     { label: ' Logout', icon: <LogoutOutlined />, onClick: handleLogout, path:'/login' }, // Update logout item
@@ -67,7 +71,6 @@ const Sidebar = () => {
 
       <style jsx>{`
         .sidebar {
-          border-radius: 2%;
           width: 225px;
           height: 100%;
           background-color: #dfe6e9;
