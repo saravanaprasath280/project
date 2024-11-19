@@ -2,9 +2,11 @@
 
 import os
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 # Security
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'default-secret-key')  # Use environment variable
@@ -129,3 +131,13 @@ CORS_ALLOW_METHODS = [
     'DELETE',
     'OPTIONS',
 ]
+
+
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Access token expiration
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),     # Refresh token expiration
+    'ROTATE_REFRESH_TOKENS': True,                   # Rotate refresh tokens on use
+    'BLACKLIST_AFTER_ROTATION': True,                 # Blacklist old refresh tokens
+    # Add any other configuration you need
+}

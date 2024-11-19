@@ -123,57 +123,57 @@ class UserProfileViewSet(viewsets.ViewSet):
         return Response({'detail': 'No image provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST'])
-def submit_questions(request):
-    try:
-        print(request.data)
-        questions_data = request.data['questions']
-        test_title = request.data['testTitle']
-        test_introduction = request.data['testIntroduction']
+# @api_view(['POST'])
+# def submit_questions(request):
+#     try:
+#         print(request.data)
+#         questions_data = request.data['questions']
+#         test_title = request.data['testTitle']
+#         test_introduction = request.data['testIntroduction']
 
-        # Create a quiz entry first
+#         # Create a quiz entry first
         
-        CreateQuiz.objects.filter(creator_ID=request.user).delete()
+#         CreateQuiz.objects.filter(creator_ID=request.user).delete()
 
             
-        # Loop through the questions and save the details based on their type
-        for question_data in questions_data:
-            quiz = CreateQuiz.objects.create(
-            creator_ID=request.user,
-            test_title=test_title,
-            Introduction=test_introduction,
-            )
-            # Determine the question type
-            question_type = question_data.get('type', 'multiplechoice')
-            quiz.question= question_data['text'] 
-            quiz.question_type= question_data['type']
-            # If it's a fill-in-the-blank or true/false, just save the correct answer
-            if question_type == 'fillintheblank' or question_type == 'truefalse':
-                # Save the correct answer directly (assuming it's a string)
-                quiz.is_correct.append(question_data['correctAnswer'])  # Save correct answer directly
+#         # Loop through the questions and save the details based on their type
+#         for question_data in questions_data:
+#             quiz = CreateQuiz.objects.create(
+#             creator_ID=request.user,
+#             test_title=test_title,
+#             Introduction=test_introduction,
+#             )
+#             # Determine the question type
+#             question_type = question_data.get('type', 'multiplechoice')
+#             quiz.question= question_data['text'] 
+#             quiz.question_type= question_data['type']
+#             # If it's a fill-in-the-blank or true/false, just save the correct answer
+#             if question_type == 'fillintheblank' or question_type == 'truefalse':
+#                 # Save the correct answer directly (assuming it's a string)
+#                 quiz.is_correct.append(question_data['correctAnswer'])  # Save correct answer directly
 
-            # If it's a multiple-choice question, save options
-            elif question_type == 'multiplechoice' or question_type == 'multipleresponse':
-                options = question_data.get('options', [])
-                quiz.options.append(options)  # Save options directly
-                if question_type == 'multipleresponse':
-                    correct_answers = question_data.get('correctAnswers', [])  # List of correct answers
-                    for answer in correct_answers:
-                        quiz.is_correct.append(options[answer])
-                else:
-                    # For regular multiple choice (single correct answer)
-                    quiz.is_correct.append(options[question_data['correctAnswer']])
+#             # If it's a multiple-choice question, save options
+#             elif question_type == 'multiplechoice' or question_type == 'multipleresponse':
+#                 options = question_data.get('options', [])
+#                 quiz.options.append(options)  # Save options directly
+#                 if question_type == 'multipleresponse':
+#                     correct_answers = question_data.get('correctAnswers', [])  # List of correct answers
+#                     for answer in correct_answers:
+#                         quiz.is_correct.append(options[answer])
+#                 else:
+#                     # For regular multiple choice (single correct answer)
+#                     quiz.is_correct.append(options[question_data['correctAnswer']])
                             
 
-        # Save the quiz object after appending options and answers
-            print(quiz)
-            quiz.save()
+#         # Save the quiz object after appending options and answers
+#             print(quiz)
+#             quiz.save()
 
-        return Response({"message": "Questions submitted successfully"}, status=201)
+#         return Response({"message": "Questions submitted successfully"}, status=201)
 
-    except Exception as e:
-        print(f"Error submitting questions: {e}")
-        return Response({"error": str(e)}, status=400)
+#     except Exception as e:
+#         print(f"Error submitting questions: {e}")
+#         return Response({"error": str(e)}, status=400)
 
 
 
@@ -249,16 +249,17 @@ def submit_questions2(request):
   
             if question_type in ['multiplechoice', 'multipleresponse']:
                 # Update the question instance with options
+                trimmed_options = [option.strip() for option in options]
                 question.options = options  # Assign the options directly to the question
                 question.save()  # Save the question instance
 
                 if question_type == 'multipleresponse':
                     correct_answers = question_data.get('correctAnswers', [])  # List of correct answers
-                    question.correct_answer = [options[answer] for answer in correct_answers]
+                    question.correct_answer = [trimmed_options[answer].strip() for answer in correct_answers]
                 else:
                     # For regular multiple choice (single correct answer)
-                    question.correct_answer = options[question_data['correctAnswer']]
-
+                    correct_answer_index = question_data['correctAnswer']
+                    question.correct_answer = trimmed_options[correct_answer_index].strip()
             # Ensure to save the question after setting options and correct answer
             question.save()
 
@@ -270,6 +271,102 @@ def submit_questions2(request):
     except Exception as e:
         print(f"Error submitting quiz: {e}")
         return Response({"error": str(e)}, status=400)
+
+
+
+
+import json
+def editdataprocess(data):
+    returndata = []
+    
+    for i in data:
+        a= {}
+        for x, y in i.items():
+            print("data_____________________________________________set",x, y)
+            
+            
+            if x == "question":
+                a['text'] = y
+            elif x== "options":
+                print(y,len(y))
+                if len(y):
+                    y =eval(y)
+                    print(type(y) , y)
+                    a['options'] = y
+                else:
+                    a['options'] = y
+            elif x == "correct_answer":
+                if len(y):
+                    try:
+                        y =eval(y)
+                        print(type(y) , y)
+                        a['correctAnswer'] = y
+                        print('handled')
+                    except:
+                        a['correctAnswer'] = y
+                else:
+                    a['correctAnswer'] = y
+                # a['correctAnswer'] = y
+            elif x == 'question_type':
+                if y == 'multiplechoice':
+                    a['type'] = 'multiplechoice'
+                elif y== 'truefalse':
+                    a['type'] = 'truefalse'
+                elif y== 'multipleresponse':
+                    a['type'] = 'multipleresponse'
+                elif y== 'fillintheblank':
+                    a['type'] = 'fillintheblank'
+        print("\n\na :",a)
+        CorrectAnswerList = a['correctAnswer']
+        optionList = a['options']
+        if a['type'] == 'truefalse':
+            if CorrectAnswerList == 'True':
+                a['correctAnswer'] = '0'
+            elif CorrectAnswerList == 'False':
+                a['correctAnswer'] = '1'
+            else:
+                a['correctAnswer'] = CorrectAnswerList
+
+        elif a['type'] == 'multipleresponse':
+            b = []
+            for i in CorrectAnswerList:
+                b.append(optionList.index(i))
+            a['correctAnswer'] = b
+            print('--------------------------------------------------------',a['correctAnswer'])
+
+        elif a['type'] == 'fillintheblank':
+            a['correctAnswer'] = CorrectAnswerList
+
+        elif a['type'] == 'multiplechoice':
+            a['correctAnswer']=optionList.index(CorrectAnswerList) 
+           
+
+        returndata.append(a)
+    return returndata
+            
+
+@api_view(['POST'])
+@permission_classes([AllowAny])  # Allow access to everyone
+def get_question_update(request, testID):
+    try:
+        # Fetch questions related to the given testID
+        print(testID)
+
+        questions = Question.objects.filter(quiz__Test_ID=testID)  # Adjusted to use the correct relationship
+        serializer = QuestionSerializer(questions, many=True)  # Serialize the data
+        # print('mydata:',serializer.data)
+        introduction = CreateTest.objects.filter(Test_ID = testID).values()
+        # print(introduction[0].get('test_title'))
+        test_title = introduction[0].get('test_title')
+        test_introduction = introduction[0].get('introduction')
+        data1 = editdataprocess(serializer.data)
+        sent_data = {'title':test_title,'introduction':test_introduction,'questions':data1}
+        
+        # print(sent_data)
+        return Response(sent_data)
+    except Question.DoesNotExist:
+        return Response({'error': 'No questions found for this test.'}, status=404)
+
 
 
 
@@ -287,10 +384,6 @@ def get_question(request, testID):
         return Response({'error': 'No questions found for this test.'}, status=404)
 
 
-# @api_view(['POST'])
-# @permission_classes([AllowAny])  # Allow access to everyone
-# def submit-answer(request, testID):
-#     try:
 
 
 @api_view(['POST'])

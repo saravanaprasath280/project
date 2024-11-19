@@ -103,7 +103,7 @@ const Login = () => {
     border: none;
     border-bottom: 1px solid #ddd;
     border-radius: 0;
-    font-size: 16px; /* Increased font size */
+    font-size: 15px; /* Increased font size */
     outline: none;
   }
   input:focus {

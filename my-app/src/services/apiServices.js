@@ -43,21 +43,35 @@ apiInstance.interceptors.request.use(
 // API service functions
 
 // Corrected: Use apiInstance instead of axios for consistency
-export const submitQuestions = async (testTitle,testIntroduction,questions) => {
-  try {
-    const response = await apiInstance.post('submit-questions/', { testTitle,testIntroduction,questions }); // Changed to apiInstance
-    alert("questions submited successfully");
-    return response.data;
-  } catch (error) {
-    console.error('Error submitting questions:', error);
-    throw error;
-  }
-};
+
+// export const submitQuestions = async (testTitle,testIntroduction,questions) => {
+//   try {
+//     const response = await apiInstance.post('submit-questions/', { testTitle,testIntroduction,questions }); // Changed to apiInstance
+//     alert("questions submited successfully");
+//     return response.data;
+//   } catch (error) {
+//     console.error('Error submitting questions:', error);
+//     throw error;
+//   }
+// };
 
 export const GetQuestions = async (testID) => {
   try {
     // Using a dynamic URL with the testID
     const response = await apiInstance.post(`get-question/${testID}/`,testID);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching questions:', error);
+    throw error; // Propagate the error to be handled by the calling function
+  }
+};
+
+
+
+export const fetchTestData = async (testID) => {
+  try {
+    // Using a dynamic URL with the testID
+    const response = await apiInstance.post(`get-question-update/${testID}/`,testID);
     return response.data;
   } catch (error) {
     console.error('Error fetching questions:', error);

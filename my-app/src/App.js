@@ -41,10 +41,10 @@ function Content() {
       <Route path="/dbsettings" element={<Dbsettings />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/test/:id" element={<Test />} />
+      <Route path="/edit-test/:testId" element={<Edittest />} />
       <Route path="/test" element={<Testlist />} />
       <Route path="/createtest" element={<Createtest />} />
       <Route path="/publish" element={<Publish />} />
-      <Route path="/edittest" element={<Edittest />} />
     </Routes>
   );
 }

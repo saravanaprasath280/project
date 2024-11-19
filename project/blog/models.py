@@ -36,7 +36,7 @@ class Question(models.Model):
     question = models.TextField()
     question_type = models.CharField(max_length=255)
     options = models.TextField()
-    correct_answer = models.TextField(blank = True,null= True)   
+    correct_answer = models.TextField(blank = True,null= True)
 
 
 class TestParticipant(models.Model):

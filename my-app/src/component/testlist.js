@@ -94,11 +94,11 @@ const TestRow = ({ test, testNumber, handleViewTest, navigate }) => (
     </td>
     <td>
       <button onClick={() => navigate(`/test/${test.Test_ID}`)}>
-        Go to Test
+      Quiz
       </button>
     </td>
     <td>
-      <button onClick={() => navigate(`/edittest`)}>
+      <button onClick={() => navigate(`/edit-test/${test.Test_ID}`)}>
         edit
       </button>
     </td>
@@ -107,6 +107,7 @@ const TestRow = ({ test, testNumber, handleViewTest, navigate }) => (
 
 const styles = `
   .test-form {
+   
     margin: 20px auto;
     max-width: 800px;
     text-align: center;

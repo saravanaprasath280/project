@@ -85,7 +85,7 @@ const LoginPage = () => {
     
         alert("Correct Answer Array: " + correctAnswerArray);
         console.log("Parsed Correct Answer Array:", correctAnswerArray);
-
+        
         
     
         // Check if every answer is in the correct answer list and vice versa

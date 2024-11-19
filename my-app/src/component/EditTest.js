@@ -1,15 +1,49 @@
-import React, { useState } from 'react';
-import { submitQuestions2 } from '../services/apiServices';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { submitQuestions2, fetchTestData} from '../services/apiServices';
+// import { useNavigate } from 'react-router-dom';
 import { publish } from './publish';
+import { useNavigate, useParams } from 'react-router-dom';
 
-const EditTest = () => {
+const CreateTest = () => {
   const navigate = useNavigate();
+  const { testId } = useParams();
   const [testTitle, setTestTitle] = useState('');
   const [testIntroduction, setTestIntroduction] = useState('');
   const [questions, setQuestions] = useState([]);
   const [newOption, setNewOption] = useState('');
   const [link, setLink] = useState('');
+useEffect(() => {
+    const fetchData = async () => {
+      if (!testId) {
+        console.error('No testId provided');
+        return;
+      }
+
+      try {
+        const result = await fetchTestData(testId);
+        if (result) {
+          console.log(result)
+          const { title, introduction, questions } = result;
+          setTestTitle(title);
+          setTestIntroduction(introduction);
+          setQuestions(questions || []); // Ensure questions is an array
+          console.log("data : ",testTitle,testIntroduction,questions)
+        } else {
+          console.error('Test data not found');
+        }
+      } catch (error) {
+        console.error('Error fetching test data:', error);
+      }
+    };
+
+    fetchData();
+  }, [testId]);
+
+  
+  const handleNewOptionChange = (e) => {
+    setNewOption(e.target.value);
+  };
+
 
   const addTrueFalseQuestion = () => {
     setQuestions([
@@ -59,18 +93,32 @@ const EditTest = () => {
 
   const handleCorrectAnswersChange = (qIndex, optionIndex) => {
     const newQuestions = [...questions];
-    const correctAnswers = newQuestions[qIndex].correctAnswers;
+    const correctAnswer = newQuestions[qIndex].correctAnswer || [];
   
-    if (correctAnswers.includes(optionIndex)) {
-      // Remove the option if already selected
-      newQuestions[qIndex].correctAnswers = correctAnswers.filter((index) => index !== optionIndex);
+    if (correctAnswer.includes(optionIndex)) {
+      // Remove the option if it's already selected
+      newQuestions[qIndex].correctAnswer = correctAnswer.filter((index) => index !== optionIndex);
     } else {
       // Add the option to correct answers
-      newQuestions[qIndex].correctAnswers = [...correctAnswers, optionIndex];
+      newQuestions[qIndex].correctAnswer = [...correctAnswer, optionIndex];
     }
   
     setQuestions(newQuestions);
   };
+
+  // const handleCorrectAnswersChange1 = (qIndex, optionIndex) => {
+  //   const newQuestions = [...questions];
+  //   const question = newQuestions[qIndex];
+  
+  //   // Toggle optionIndex in correctAnswer
+  //   if (question.correctAnswer.includes(optionIndex)) {
+  //     question.correctAnswer = question.correctAnswer.filter(idx => idx !== optionIndex);
+  //   } else {
+  //     question.correctAnswer = [...question.correctAnswer, optionIndex];
+  //   }
+  
+  //   setQuestions(newQuestions); // Update the state with the modified questions array
+  // };
   
 
   const handleCorrectAnswerChange = (qIndex, optionIndex) => {
@@ -98,6 +146,8 @@ const EditTest = () => {
     setQuestions(updatedQuestions);
   };
 
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -106,7 +156,7 @@ const EditTest = () => {
       const testId = result.test_id; 
       console.log("testid:",testId);
       const generatedLink = `http://localhost:3000/test/${testId}`;
-      localStorage.setItem("testId",testId)
+      localStorage.setItem("testId",testId);
       setLink(generatedLink);  // Store the generated link in state
       // Redirect to another page, e.g., '/new-page'
       navigate('/publish');
@@ -147,9 +197,7 @@ const EditTest = () => {
         {questions.map((question, qIndex) => (
           <div key={qIndex} className="question-group">
             <div className="question-content">
-              <div className="question-number">
-                {qIndex + 1}.
-              </div>
+              <div className="question-number">{qIndex + 1}.</div>
               <textarea
                 value={question.text}
                 onChange={(e) => handleQuestionTextChange(qIndex, e.target.value)}
@@ -173,7 +221,7 @@ const EditTest = () => {
                         />
                         <input
                           type="text"
-                          value={option ||''}
+                          value={option || ''}
                           onChange={(e) => handleOptionChange(qIndex, optionIndex, e.target.value)}
                           placeholder={`Option ${optionIndex + 1}`}
                           required
@@ -181,8 +229,6 @@ const EditTest = () => {
                       </label>
                     </div>
                   ))}
-
-                  {/* Add new option input */}
                   <div className="add-option-group">
                     <input
                       type="text"
@@ -191,18 +237,19 @@ const EditTest = () => {
                       placeholder="Add another option"
                       onClick={() => handleAddOption(qIndex)}
                       onChange={(e) => setNewOption(e.target.value)}
-                      readOnly
                     />
                     <input
-                    type="text"
-                    onClick={() => handleRemoveQuestion(qIndex)}
-                    className="custom-input-2"
-                    placeholder="Remove this question"
-                    readOnly
-                  />
+                      type="text"
+                      onClick={() => handleRemoveQuestion(qIndex)}
+                      className="custom-input-2"
+                      placeholder="Remove this question"
+                      readOnly
+                    />
                   </div>
                 </>
               )}
+
+
 
               {question.type === 'multipleresponse' && (
                 <>
@@ -211,7 +258,7 @@ const EditTest = () => {
                       <label>
                         <input
                           type="checkbox"
-                          checked={question.correctAnswers.includes(optionIndex)} // Check if the current option is in the correctAnswers array
+                          checked={question.correctAnswer && question.correctAnswer.includes(optionIndex)}
                           onChange={() => handleCorrectAnswersChange(qIndex, optionIndex)}
                         />
                         <input
@@ -224,10 +271,8 @@ const EditTest = () => {
                       </label>
                     </div>
                   ))}
-
-                  {/* Add new option input */}
                   <div className="add-option-group">
-                    <input
+                  <input
                       type="text"
                       className="custom-input"
                       value={newOption}
@@ -244,13 +289,11 @@ const EditTest = () => {
                       readOnly
                     />
                   </div>
-                  
                 </>
               )}
 
 
               {question.type === 'truefalse' && (
-                
                 <div className="form-group">
                   <label>
                     <input
@@ -284,7 +327,6 @@ const EditTest = () => {
                  />
                </div>
                 </div>
-                 
               )}
 
               {question.type === 'fillintheblank' && (
@@ -293,7 +335,7 @@ const EditTest = () => {
                   type="text"
                   value={question.correctAnswer}
                   onChange={(e) => handleFillInTheBlankAnswerChange(qIndex, e.target.value)}
-                  placeholder="Type your answer"
+                  placeholder="Answer"
                   required
                   className="input-field"
                 />
@@ -308,26 +350,30 @@ const EditTest = () => {
                 </div></>
               )}
             </div>
+
+            
           </div>
         ))}
 
-        <button type="button" onClick={addMultipleChoiceQuestion}>
-          Multiple Choice
+        <div className="button-group">
+          <button type="button" className="add-question-btn" onClick={addTrueFalseQuestion}>
+            True/False
+          </button>
+          <button type="button" className="add-question-btn" onClick={addMultipleChoiceQuestion}>
+            Multiple Choice
+          </button>
+          <button type="button" className="add-question-btn" onClick={addFillInTheBlankQuestion}>
+            Fill-in-the-Blank
+          </button>
+          <button type="button" className="add-question-btn" onClick={addMultipleResponseQuestion}>
+            MultipleResponse
+          </button>
+          <button type="submit" className="submit-btn">
+          Save
         </button>
-        <button type="button" onClick={addTrueFalseQuestion}>
-          True/False
-        </button>
-        <button type="button" onClick={addMultipleResponseQuestion}>
-          Multiple Response
-        </button>
+        </div>
 
-        <button type="button" onClick={addFillInTheBlankQuestion}>
-          Fill-in-Blanks
-        </button>
-        <button type="submit">Save</button>
-        
       </form>
-  
       <style jsx>{`
         .test-form {
           margin-left: 225px;
@@ -355,7 +401,7 @@ const EditTest = () => {
         }
 
          .input-field, .textarea-field {
-          width: 100%;
+          width: 100% !important;
           padding: 10px;
           margin-bottom: 12px;
           border-radius: 4px;
@@ -522,10 +568,9 @@ const EditTest = () => {
           text-decoration: underline;
         }
 
-
       `}</style>
     </div>
   );
 };
 
-export default EditTest;
+export default CreateTest;
